@@ -37,7 +37,7 @@ int BE_init_ssl() {
 	ctx = SSL_CTX_new(meth);
 
 	ssl_fd = socket(AF_INET, SOCK_STREAM, 0);
-	BE_error(ssl_fd, "BE_init_ssl : socket");
+	//BE_error(ssl_fd, "BE_init_ssl : socket");
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;

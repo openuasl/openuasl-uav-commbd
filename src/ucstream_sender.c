@@ -11,18 +11,22 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h> // gui
+
 #include "ucstream_sender.h"
-#include "commbd.h"
+#include "auth_mgr.h"
 #include "error_handling.h"
+
 
 int ucsock;
 
 int is_stop_imgstream;
 
-int BE_init_ucstream() {
+int UCS_init() {
 	struct sockaddr_in serv_addr;
 	int err;
 
@@ -32,44 +36,44 @@ int BE_init_ucstream() {
 	serv_addr.sin_port = htons(UCSTREAM_SERVER_PORT);
 
 	ucsock = socket(PF_INET, SOCK_STREAM, 0);
-	BE_syserr(ucsock, -1, "BE_init_ucstream : socket");
+	//BE_syserr(ucsock, -1, "BE_init_ucstream : socket");
 
 	err = connect(ucsock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-	BE_syserr(err, -1, "BE_init_ucstream : connect");
+	//BE_syserr(err, -1, "BE_init_ucstream : connect");
 
 	return 0;
 }
 
 // thread
-int BE_start_imgstream() {
+int UCS_start() {
 	char diskid[32];
 	char uavid_hex_string[66];
 	char buffer[2];
 	int err;
 
-	err = BE_get_disk_id(diskid);
-	BE_error(err, "BE_start_imgstream : BE_get_disk_id");
+	err = AMGR_get_disk_id(diskid);
+	//BE_error(err, "BE_start_imgstream : BE_get_disk_id");
 
-	err = BE_get_uav_id(diskid, uavid_hex_string + 1);
-	BE_error(err, "BE_start_imgstream : BE_get_uav_id");
+	err = AMGR_get_uav_id(diskid, uavid_hex_string + 1);
+	//BE_error(err, "BE_start_imgstream : BE_get_uav_id");
 
-	uavid_hex_string[0] = IMGS_REQ_SERIAL;
+	uavid_hex_string[0] = UCS_REQ_SERIAL;
 	uavid_hex_string[65] = '\0';
 
 	printf("uavid : %s", uavid_hex_string + 1);
 
-	err = send(imgsock, uavid_hex_string, 66, 0);
-	BE_error(err, "BE_start_imgstream : IMGS_REQ_SERIAL");
+	err = send(ucsock, uavid_hex_string, 66, 0);
+	//BE_error(err, "BE_start_imgstream : IMGS_REQ_SERIAL");
 
 	do {
-		err = recv(imgsock, buffer, 1, 0);
-		BE_error(err, "BE_start_imgstream : IMGS_REP_READY");
+		err = recv(ucsock, buffer, 1, 0);
+		//BE_error(err, "BE_start_imgstream : IMGS_REP_READY");
 
-	} while (buffer[0] != IMGS_REP_READY);
+	} while (buffer[0] != UCS_REP_READY);
 
-	buffer[0] = IMGS_REQ_START;
-	err = send(imgsock, buffer, 1, 0);
-	BE_error(err, "BE_start_imgstream : IMGS_REQ_START");
+	buffer[0] = UCS_REQ_START;
+	err = send(ucsock, buffer, 1, 0);
+	//BE_error(err, "BE_start_imgstream : IMGS_REQ_START");
 
 	return 0;
 }
@@ -78,7 +82,7 @@ void* wait_for_stop(void*);
 
 int jpeg_param[3] = {
 		CV_IMWRITE_JPEG_QUALITY,
-		IMGS_JPEG_QUALITY,
+		UCS_JPEG_QUALITY,
 		0
 };
 
@@ -89,34 +93,42 @@ void itobuf(int i,char* buf){
 	buf[3] = 0xff & (i);
 }
 
-int BE_run_imgstream() {
+void convert_non_block_mode(){
+	int flag = fcntl( ucsock, F_GETFL, 0 );
+	fcntl(ucsock, F_SETFL, flag | O_NONBLOCK);
+}
+
+int UCS_run() {
 	IplImage* image;
 	CvCapture* capture;
 	pthread_t check_stop;
 	CvMat* cvmat;
 	char imgseg[9];
+	char recvbuf[2];
 	size_t rsize, ssize, total_ssize;
 	int err;
 
 	image = NULL;
 	capture = cvCaptureFromCAM(0);
 
-	err = pthread_create(&check_stop, NULL, wait_for_stop, NULL);
-	BE_error(err, "BE_run_imgstream : pthread_create");
+	convert_non_block_mode();
+
+	//err = pthread_create(&check_stop, NULL, wait_for_stop, NULL);
+	//BE_error(err, "BE_run_imgstream : pthread_create");
 
 	// 1280 x 800 tablet size
 	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH,
-			IMGS_CAPTURE_SIZE_WIDTH);
+			UCS_CAPTURE_SIZE_WIDTH);
 	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT,
-			IMGS_CAPTURE_SIZE_HIGHT);
+			UCS_CAPTURE_SIZE_HIGHT);
 
 //	cvNamedWindow("odroid capture", 0);
 //	cvResizeWindow("odroid capture",
 //			IMGS_CAPTURE_SIZE_WIDTH, IMGS_CAPTURE_SIZE_HIGHT);
 
-	imgseg[0] = IMGS_REQ_IMGSEG;
+	imgseg[0] = UCS_REQ_IMGSEG;
 
-	itobuf(IMGS_SENDBUF_SIZE, imgseg + 1);
+	itobuf(UCS_SENDBUF_SIZE, imgseg + 1);
 
 	while (is_stop_imgstream != 1) {
 		if (cvGrabFrame(capture) == 0) {
@@ -128,7 +140,7 @@ int BE_run_imgstream() {
 		cvmat = cvEncodeImage(".jpg", image, jpeg_param);
 		itobuf(cvmat->cols * cvmat->rows, imgseg + 5);
 
-		err = send(imgsock, imgseg, 9, 0);
+		err = send(ucsock, imgseg, 9, 0);
 		if(err){
 			perror("BE_start_imgstream : send imgseg");
 			break;
@@ -136,19 +148,28 @@ int BE_run_imgstream() {
 
 		total_ssize = 0;
 		while (rsize) {
-			ssize = send(imgsock, cvmat->data.ptr + total_ssize,
-					IMGS_SENDBUF_SIZE, 0);
+			ssize = send(ucsock, cvmat->data.ptr + total_ssize,
+					UCS_SENDBUF_SIZE, 0);
 
 			if (ssize > 0) {
 				total_ssize += ssize;
 				rsize -= ssize;
-			}else{
-				perror("BE_start_imgstream : image data send");
+			}else if(ssize == -1){
+				perror("UCS_run");
 				break;
 			}
 		}
 
 		cvReleaseMat(&cvmat);
+
+		if(recv(ucsock, recvbuf, 1, 0) > 0){
+			if(recvbuf[0] == UCS_REP_STOP){
+				is_stop_imgstream = 1;
+			}else{
+				perror("UCS_run");
+				break;
+			}
+		}
 
 //		cvShowImage("odroid capture", image);
 //		if (cvWaitKey(10) >= 0)
@@ -176,13 +197,13 @@ void* wait_for_stop(void* p) {
 
 	do {
 
-		err = recv(imgsock, buf, 1, 0);
+		err = recv(ucsock, buf, 1, 0);
 		if(err < 0){
 			perror("BE_start_imgstream : wait_for_stop");
 			break;
 		}
 
-		if (buf[0] == IMGS_REP_STOP)
+		if (buf[0] == UCS_REP_STOP)
 			is_stop_imgstream = 1;
 
 	} while (is_stop_imgstream != 1);

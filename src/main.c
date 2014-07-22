@@ -7,7 +7,7 @@
 void* (*ptr_dlopen)(__const char *, int) = dlopen;
 
 // odroid client main
-int main(void) {
+int main(int argc, char* argv[]) {
 
 //	if (BE_init_ssl()) {
 //		return 1;
@@ -15,13 +15,13 @@ int main(void) {
 //
 //	printf("ssl connection success\n");
 
-	if (BE_init_imgstream()) {
+	if (UCS_init()) {
 		return 2;
 	}
 
 	printf("image stream connection success\n");
 
-	if(BE_start_imgstream()){
+	if(UCS_start()){
 		return 3;
 	}
 

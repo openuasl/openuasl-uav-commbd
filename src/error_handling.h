@@ -17,8 +17,6 @@ typedef struct _ErrorDef_t{
 
 void ERRH_init_error_def(ErrorDef_t* ed, int );
 
-
-
 void ERRH_register_module(int mod_num, ErrorDef_t* ed);
 
 void ERRH_push_error(int mod, int err);

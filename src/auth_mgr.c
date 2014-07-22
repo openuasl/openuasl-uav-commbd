@@ -1,24 +1,22 @@
-/*
- * commbd.c
- *
- *  Created on: 2014. 7. 5.
- *      Author: aroom1
- */
-
 #include <linux/types.h>
 #include <linux/hdreg.h>
 #include <linux/fcntl.h>
 
 #include <openssl/sha.h>
 
-#include "commbd.h"
+#include "auth_mgr.h"
 #include "error_handling.h"
 
-int BE_get_disk_id(char* buf) {
+int AMGR_get_disk_id(char* buf) {
 	int fd, err;
 
-	fd = open("/sys/block/mmcblk0/device/cid", O_RDONLY);
-	BE_error(fd, "BE_get_sda_id : open");
+	fd = open(AMGR_SD_CARD_CID_PATH, O_RDONLY);
+
+	if(fd == -1){
+		perror("AMGR_get_disk_id : open");
+		close(fd);
+		return 1;
+	}
 
 	read(fd, buf, 32);
 
@@ -27,7 +25,7 @@ int BE_get_disk_id(char* buf) {
 	return 0;
 }
 
-int BE_get_uav_id(char* diskid, char* uavid){
+int AMGR_get_uav_id(char* diskid, char* uavid){
 	SHA256_CTX ctx;
 	char buf[SHA256_DIGEST_LENGTH];
 	int i;
