@@ -12,10 +12,14 @@
 #define INTERMEDIATE_SERVER_PORT	12345
 #include <openssl/ssl.h>
 
-extern SSL *ssl;
+typedef struct _SslHandle_t{
+	SSL* ssl;
+	SSL_CTX* ctx;
+	int ssl_fd;
+}SslHandle_t;
 
-int BE_init_ssl();
-void BE_free_ssl();
+int SECL_init(SslHandle_t* handle, char* ip, int port);
+void SECL_release(SslHandle_t* handle);
 
 
 

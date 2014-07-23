@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <pthread.h>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -18,28 +17,23 @@
 #include <opencv/highgui.h> // gui
 
 #include "ucstream_sender.h"
+#include "secure_socket_layer.h"
 #include "auth_mgr.h"
 #include "error_handling.h"
 
 
-int ucsock;
+SslHandle_t* ucs_handle;
 
 int is_stop_imgstream;
 
 int UCS_init() {
-	struct sockaddr_in serv_addr;
-	int err;
 
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = PF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr(UCSTREAM_SERVER_IP);
-	serv_addr.sin_port = htons(UCSTREAM_SERVER_PORT);
+	ucs_handle = (SslHandle_t*)malloc(sizeof(SslHandle_t));
 
-	ucsock = socket(PF_INET, SOCK_STREAM, 0);
-	//BE_syserr(ucsock, -1, "BE_init_ucstream : socket");
+	SECL_init(ucs_handle,
+			UCSTREAM_SERVER_IP, UCSTREAM_SERVER_PORT);
 
-	err = connect(ucsock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-	//BE_syserr(err, -1, "BE_init_ucstream : connect");
+	SSL_connect(ucs_handle->ssl);
 
 	return 0;
 }
@@ -51,10 +45,10 @@ int UCS_start() {
 	char buffer[2];
 	int err;
 
-	err = AMGR_get_disk_id(diskid);
+	err = AUTH_get_disk_id(diskid);
 	//BE_error(err, "BE_start_imgstream : BE_get_disk_id");
 
-	err = AMGR_get_uav_id(diskid, uavid_hex_string + 1);
+	err = AUTH_get_uav_id(diskid, uavid_hex_string + 1);
 	//BE_error(err, "BE_start_imgstream : BE_get_uav_id");
 
 	uavid_hex_string[0] = UCS_REQ_SERIAL;
@@ -62,23 +56,23 @@ int UCS_start() {
 
 	printf("uavid : %s", uavid_hex_string + 1);
 
-	err = send(ucsock, uavid_hex_string, 66, 0);
+	SSL_write(ucs_handle->ssl, uavid_hex_string, 66);
+
 	//BE_error(err, "BE_start_imgstream : IMGS_REQ_SERIAL");
 
 	do {
-		err = recv(ucsock, buffer, 1, 0);
+		SSL_read(ucs_handle->ssl, buffer, 1);
 		//BE_error(err, "BE_start_imgstream : IMGS_REP_READY");
 
 	} while (buffer[0] != UCS_REP_READY);
 
 	buffer[0] = UCS_REQ_START;
-	err = send(ucsock, buffer, 1, 0);
+
+	SSL_write(ucs_handle->ssl, buffer, 1);
 	//BE_error(err, "BE_start_imgstream : IMGS_REQ_START");
 
 	return 0;
 }
-
-void* wait_for_stop(void*);
 
 int jpeg_param[3] = {
 		CV_IMWRITE_JPEG_QUALITY,
@@ -94,8 +88,8 @@ void itobuf(int i,char* buf){
 }
 
 void convert_non_block_mode(){
-	int flag = fcntl( ucsock, F_GETFL, 0 );
-	fcntl(ucsock, F_SETFL, flag | O_NONBLOCK);
+	int flag = fcntl(ucs_handle->ssl_fd, F_GETFL, 0 );
+	fcntl(ucs_handle->ssl_fd, F_SETFL, flag | O_NONBLOCK);
 }
 
 int UCS_run() {
@@ -105,16 +99,13 @@ int UCS_run() {
 	CvMat* cvmat;
 	char imgseg[9];
 	char recvbuf[2];
-	size_t rsize, ssize, total_ssize;
+	size_t tsize, ssize, total_size;
 	int err;
 
 	image = NULL;
 	capture = cvCaptureFromCAM(0);
 
 	convert_non_block_mode();
-
-	//err = pthread_create(&check_stop, NULL, wait_for_stop, NULL);
-	//BE_error(err, "BE_run_imgstream : pthread_create");
 
 	// 1280 x 800 tablet size
 	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH,
@@ -132,41 +123,50 @@ int UCS_run() {
 
 	while (is_stop_imgstream != 1) {
 		if (cvGrabFrame(capture) == 0) {
-			perror("BE_start_imgstream : cvGrabFrame\n");
+			perror("UCS_run : cvGrabFrame\n");
 			return 1;
 		}
 
 		image = cvRetrieveFrame(capture, 0);
 		cvmat = cvEncodeImage(".jpg", image, jpeg_param);
-		itobuf(cvmat->cols * cvmat->rows, imgseg + 5);
+		total_size = cvmat->cols * cvmat->rows;
+		itobuf(total_size, imgseg + 5);
 
-		err = send(ucsock, imgseg, 9, 0);
+		err = SSL_write(ucs_handle->ssl, imgseg, 9);
+
 		if(err){
-			perror("BE_start_imgstream : send imgseg");
+			perror("UCS_run : UCS_REQ_IMGSEG");
 			break;
 		}
 
-		total_ssize = 0;
-		while (rsize) {
-			ssize = send(ucsock, cvmat->data.ptr + total_ssize,
-					UCS_SENDBUF_SIZE, 0);
+		ssize = 0;
 
-			if (ssize > 0) {
-				total_ssize += ssize;
-				rsize -= ssize;
-			}else if(ssize == -1){
-				perror("UCS_run");
+		while (total_size) {
+			if(total_size >= UCS_SENDBUF_SIZE)
+				tsize = UCS_SENDBUF_SIZE;
+			else
+				tsize = total_size;
+
+			err = SSL_write(ucs_handle->ssl,
+					cvmat->data.ptr + ssize, tsize);
+
+			if(err <= 0){
+				perror("UCS_run : send image data");
 				break;
 			}
+
+			ssize += tsize;
+			total_size -= tsize;
 		}
 
 		cvReleaseMat(&cvmat);
 
-		if(recv(ucsock, recvbuf, 1, 0) > 0){
+		if(SSL_read(ucs_handle->ssl, recvbuf, 1) > 0)
+		{
 			if(recvbuf[0] == UCS_REP_STOP){
-				is_stop_imgstream = 1;
+							is_stop_imgstream = 1;
 			}else{
-				perror("UCS_run");
+				perror("UCS_run : UCS_REP_STOP");
 				break;
 			}
 		}
@@ -182,32 +182,12 @@ int UCS_run() {
 
 	is_stop_imgstream = 0;
 
-	pthread_detach(check_stop);
-
 	return 0;
 }
 
-void BE_end_imgstream() {
-
-}
-
-void* wait_for_stop(void* p) {
-	char buf[2];
-	int err;
-
-	do {
-
-		err = recv(ucsock, buf, 1, 0);
-		if(err < 0){
-			perror("BE_start_imgstream : wait_for_stop");
-			break;
-		}
-
-		if (buf[0] == UCS_REP_STOP)
-			is_stop_imgstream = 1;
-
-	} while (is_stop_imgstream != 1);
-
-	return NULL;
+void UCS_end() {
+	SECL_release(ucs_handle);
+	free(ucs_handle);
+	ucs_handle = NULL;
 }
 

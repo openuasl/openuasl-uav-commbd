@@ -23,7 +23,7 @@
 int UCS_init();
 int UCS_start();
 int UCS_run();
-void BE_end_ucs_sender();
+void UCS_end();
 
 
 #endif /* __OPENUASL_COMMBD_UCSTREAM_SENDER_H__ */

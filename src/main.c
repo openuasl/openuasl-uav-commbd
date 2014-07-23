@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
 	printf("image stream module is running...\n");
 
-	if(BE_run_imgstream()){
+	if(UCS_run()){
 		return 4;
 	}
 

@@ -7,7 +7,7 @@
 #include "auth_mgr.h"
 #include "error_handling.h"
 
-int AMGR_get_disk_id(char* buf) {
+int AUTH_get_disk_id(char* buf) {
 	int fd, err;
 
 	fd = open(AMGR_SD_CARD_CID_PATH, O_RDONLY);
@@ -25,7 +25,7 @@ int AMGR_get_disk_id(char* buf) {
 	return 0;
 }
 
-int AMGR_get_uav_id(char* diskid, char* uavid){
+int AUTH_get_uav_id(char* diskid, char* uavid){
 	SHA256_CTX ctx;
 	char buf[SHA256_DIGEST_LENGTH];
 	int i;

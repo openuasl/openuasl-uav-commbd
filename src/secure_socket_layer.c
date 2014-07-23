@@ -22,11 +22,7 @@
 #include "secure_socket_layer.h"
 #include "error_handling.h"
 
-SSL *ssl;
-SSL_CTX *ctx;
-int ssl_fd;
-
-int BE_init_ssl() {
+int SECL_init(SslHandle_t* handle, char* ip, int port) {
 	int err;
 	struct sockaddr_in sa;
 	const SSL_METHOD *meth;
@@ -34,29 +30,31 @@ int BE_init_ssl() {
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
 	meth = SSLv3_client_method();
-	ctx = SSL_CTX_new(meth);
+	handle->ctx = SSL_CTX_new(meth);
 
-	ssl_fd = socket(AF_INET, SOCK_STREAM, 0);
+	handle->ssl_fd = socket(AF_INET, SOCK_STREAM, 0);
 	//BE_error(ssl_fd, "BE_init_ssl : socket");
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = inet_addr(INTERMEDIATE_SERVER_IP);
-	sa.sin_port = htons(INTERMEDIATE_SERVER_PORT);
+	sa.sin_addr.s_addr = inet_addr(ip);
+	sa.sin_port = htons(port);
 
-	err = connect(ssl_fd, (struct sockaddr*) &sa, sizeof(sa));
-	BE_error(err, "BE_init_ssl : connect");
+	err = connect(handle->ssl_fd,
+			(struct sockaddr*) &sa, sizeof(sa));
+	//BE_error(err, "BE_init_ssl : connect");
 
-	ssl = SSL_new(ctx);
-	SSL_set_fd(ssl, ssl_fd);
+	handle->ssl = SSL_new(handle->ctx);
+	SSL_set_fd(handle->ssl, handle->ssl_fd);
 
 	return 0;
 }
 
-void BE_free_ssl(){
-	close(ssl_fd);
-	SSL_free(ssl);
-	SSL_CTX_free(ctx);
+void SECL_release(SslHandle_t* handle){
+	SSL_shutdown(handle->ssl);
+	close(handle->ssl_fd);
+	SSL_free(handle->ssl);
+	SSL_CTX_free(handle->ctx);
 }
 
 /*
