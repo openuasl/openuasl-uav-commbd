@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -26,12 +27,11 @@ SslHandle_t* ucs_handle;
 
 int is_stop_imgstream;
 
-int UCS_init() {
+int UCS_init(char* ip) {
 
 	ucs_handle = (SslHandle_t*)malloc(sizeof(SslHandle_t));
 
-	SECL_init(ucs_handle,
-			UCSTREAM_SERVER_IP, UCSTREAM_SERVER_PORT);
+	SECL_init(ucs_handle, ip, UCSTREAM_SERVER_PORT);
 
 	SSL_connect(ucs_handle->ssl);
 
@@ -112,73 +112,52 @@ int UCS_run() {
 			UCS_CAPTURE_SIZE_WIDTH);
 	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT,
 			UCS_CAPTURE_SIZE_HIGHT);
-
-//	cvNamedWindow("odroid capture", 0);
-//	cvResizeWindow("odroid capture",
-//			IMGS_CAPTURE_SIZE_WIDTH, IMGS_CAPTURE_SIZE_HIGHT);
+	//cvSetCaptureProperty(capture, CV_CAP_PROP_FPS, UCS_CAPTURE_FPS);
 
 	imgseg[0] = UCS_REQ_IMGSEG;
 
 	itobuf(UCS_SENDBUF_SIZE, imgseg + 1);
 
 	while (is_stop_imgstream != 1) {
-		if (cvGrabFrame(capture) == 0) {
+
+		while(cvGrabFrame(capture) == 0){
 			perror("UCS_run : cvGrabFrame\n");
-			return 1;
 		}
 
 		image = cvRetrieveFrame(capture, 0);
+
 		cvmat = cvEncodeImage(".jpg", image, jpeg_param);
 		total_size = cvmat->cols * cvmat->rows;
 		itobuf(total_size, imgseg + 5);
 
-		err = SSL_write(ucs_handle->ssl, imgseg, 9);
-
-		if(err){
+		if(SSL_write(ucs_handle->ssl, imgseg, 9) <= 0){
 			perror("UCS_run : UCS_REQ_IMGSEG");
-			break;
+			cvReleaseMat(&cvmat);
+			continue;
 		}
 
 		ssize = 0;
 
-		while (total_size) {
-			if(total_size >= UCS_SENDBUF_SIZE)
-				tsize = UCS_SENDBUF_SIZE;
-			else
-				tsize = total_size;
-
-			err = SSL_write(ucs_handle->ssl,
-					cvmat->data.ptr + ssize, tsize);
-
-			if(err <= 0){
-				perror("UCS_run : send image data");
-				break;
-			}
-
-			ssize += tsize;
-			total_size -= tsize;
-		}
+		while(SSL_write(ucs_handle->ssl,
+				cvmat->data.ptr, total_size) <= 0);
 
 		cvReleaseMat(&cvmat);
+
+		usleep(50000);
 
 		if(SSL_read(ucs_handle->ssl, recvbuf, 1) > 0)
 		{
 			if(recvbuf[0] == UCS_REP_STOP){
-							is_stop_imgstream = 1;
+				is_stop_imgstream = 1;
 			}else{
 				perror("UCS_run : UCS_REP_STOP");
 				break;
 			}
 		}
 
-//		cvShowImage("odroid capture", image);
-//		if (cvWaitKey(10) >= 0)
-//					break;
 	}
 
 	cvReleaseCapture(&capture);
-
-//	cvDestroyWindow("odroid capture");
 
 	is_stop_imgstream = 0;
 

@@ -1,28 +1,30 @@
 #include <stdio.h>
-#include "secure_socket_layer.h"
-#include "ucstream_sender.h"
 #include <pthread.h>
 #include <dlfcn.h>
+#include "secure_socket_layer.h"
+#include "ucstream_sender.h"
+
 
 void* (*ptr_dlopen)(__const char *, int) = dlopen;
 
-// odroid client main
+// 1 = ip
 int main(int argc, char* argv[]) {
 
-//	if (BE_init_ssl()) {
-//		return 1;
-//	}
-//
-//	printf("ssl connection success\n");
+	if(argc != 2){
 
-	if (UCS_init()) {
-		return 2;
+		// print usage
+
+		return EXIT_FAILURE;
+	}
+
+	if (UCS_init(argv[1])) {
+		return EXIT_FAILURE;
 	}
 
 	printf("image stream connection success\n");
 
 	if(UCS_start()){
-		return 3;
+		return EXIT_FAILURE;
 	}
 
 	printf("image stream module start success\n");
@@ -30,8 +32,8 @@ int main(int argc, char* argv[]) {
 	printf("image stream module is running...\n");
 
 	if(UCS_run()){
-		return 4;
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

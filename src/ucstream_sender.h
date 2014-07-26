@@ -13,14 +13,15 @@
 #define UCS_REP_READY		0x21
 #define UCS_REP_STOP			0x22
 
-#define UCS_CAPTURE_SIZE_WIDTH	640
-#define UCS_CAPTURE_SIZE_HIGHT	400
+#define UCS_CAPTURE_SIZE_WIDTH		1280
+#define UCS_CAPTURE_SIZE_HIGHT		800
+#define UCS_CAPTURE_FPS				20
 #define UCS_SENDBUF_SIZE			4096
-#define UCS_JPEG_QUALITY			70
+#define UCS_JPEG_QUALITY			50
 
 
 
-int UCS_init();
+int UCS_init(char* ip);
 int UCS_start();
 int UCS_run();
 void UCS_end();
