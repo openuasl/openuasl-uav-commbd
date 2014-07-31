@@ -18,8 +18,8 @@ typedef struct _SslHandle_t{
 	int ssl_fd;
 }SslHandle_t;
 
-int SECL_init(SslHandle_t* handle, char* ip, int port);
-void SECL_release(SslHandle_t* handle);
+int SSLAYER_init(SslHandle_t* handle, char* ip, int port);
+void SSLAYER_release(SslHandle_t* handle);
 
 
 

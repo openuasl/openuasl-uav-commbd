@@ -10,7 +10,7 @@
 int AUTH_get_disk_id(char* buf) {
 	int fd, err;
 
-	fd = open(AMGR_SD_CARD_CID_PATH, O_RDONLY);
+	fd = open(AUTH_SD_CARD_CID_PATH, O_RDONLY);
 
 	if(fd == -1){
 		perror("AMGR_get_disk_id : open");

@@ -1,10 +1,3 @@
-/*
- * image_transmission.c
- *
- *  Created on: 2014. 7. 3.
- *      Author: root
- */
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,7 +10,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h> // gui
 
-#include "ucstream_sender.h"
+#include "ucstream.h"
 #include "secure_socket_layer.h"
 #include "auth_mgr.h"
 #include "error_handling.h"
@@ -31,7 +24,7 @@ int UCS_init(char* ip) {
 
 	ucs_handle = (SslHandle_t*)malloc(sizeof(SslHandle_t));
 
-	SECL_init(ucs_handle, ip, UCSTREAM_SERVER_PORT);
+	SSLAYER_init(ucs_handle, ip, UCSTREAM_SERVER_PORT);
 
 	SSL_connect(ucs_handle->ssl);
 
@@ -165,7 +158,7 @@ int UCS_run() {
 }
 
 void UCS_end() {
-	SECL_release(ucs_handle);
+	SSLAYER_release(ucs_handle);
 	free(ucs_handle);
 	ucs_handle = NULL;
 }
