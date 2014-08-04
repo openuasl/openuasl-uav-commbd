@@ -48,6 +48,7 @@ int MWSERIAL_init(MWSerialHandle_t* handle) {
 
 	return 0;
 }
+
 /*	internal functions area	start ****************************/
 void set_checksum(MultiWiiPacket_t* p){
 	int i;
@@ -74,27 +75,6 @@ void get_buffer(MultiWiiPacket_t* p, char* dst, int* len){
 	dst[(*len)++] = '\0';
 }
 /*	internal functions area	end ******************************/
-
-int MWSERIAL_start(MWSerialHandle_t* handle) {
-	MultiWiiPacket_t p;
-	char buf[7];
-	int len;
-
-	strcpy(p.header, MWSERIAL_REQ_HEADER);
-	p.payload_length = 0;
-	p.cmd_type = MWCMD_Attitude;
-	p.payload = NULL;
-	set_checksum(&p);
-
-	get_buffer(&p, buf, &len);
-
-	if(write(handle->serial_fd, buf, len) < 0){
-		perror("MWSERIAL_start > write");
-		return 1;
-	}
-
-	return 0;
-}
 
 int MWSERIAL_release(MWSerialHandle_t* handle) {
 	if (tcdrain(handle->serial_fd) < 0) {

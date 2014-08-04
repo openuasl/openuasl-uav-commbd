@@ -23,52 +23,54 @@ int CTRL_init(char* ip) {
 	mws_handle = (MWSerialHandle_t*) malloc(sizeof(MWSerialHandle_t));
 	MWSERIAL_init(mws_handle);
 
-	/*
-
 	// init control connection over secure socket layer
 	ctrl_handle = (SslHandle_t*) malloc(sizeof(SslHandle_t));
 	SSLAYER_init(ctrl_handle, ip, UAVCTRL_SERVER_PORT);
 	SSL_connect(ctrl_handle->ssl);
-*/
+
 	return 0;
 }
 
 int CTRL_start() {
-
-	if(MWSERIAL_start(mws_handle))
-		return 1;
-
-	return 0; //AUTH_cert_uav(ctrl_handle);
+	return AUTH_cert_uav(ctrl_handle);
 }
 
 int CTRL_run(){
-	char in_buffer[256];
+	char in_buffer[UAVCTRL_BUF_SIZE];
+	char out_buffer[UAVCTRL_BUF_SIZE];
 	int flag;
 	ssize_t read_count, i;
-/*
+
 	flag = fcntl(ctrl_handle->ssl_fd, F_GETFL, 0);
 	fcntl(ctrl_handle->ssl_fd, F_SETFL, flag | O_NONBLOCK);
-*/
-
-	//이거 request 한번 날릴때마다 한꺼번에 read 못함
-	usleep(50000);
 
 	while(!is_stop_ctrl){
 
-		read_count = read(mws_handle->serial_fd, in_buffer, sizeof(in_buffer));
+		read_count = SSL_read(ctrl_handle->ssl, in_buffer, UAVCTRL_BUF_SIZE);
 
-		printf("read_count : %d\n", read_count);
-
-		printf("%s\n", in_buffer);
-
-		for(i=0; i<read_count; i++){
-			printf("%02X", in_buffer[i] & 0xff);
+		switch(in_buffer[0]){
+		case CTRL_MWREQ_HEADER:
+			write(mws_handle->serial_fd, in_buffer+1, read_count-1);
+			usleep(50000);
+			read_count = read(mws_handle->serial_fd, in_buffer, UAVCTRL_BUF_SIZE);
+			memcpy(out_buffer+1, in_buffer, read_count);
+			out_buffer[0] = CTRL_MWREP_HEADER;
+			write(mws_handle->serial_fd, out_buffer, read_count+1);
+			break;
+		case CTRL_FKREQ_HEADER:
+			// special function
+			break;
+		case CTRL_SIREQ_HEADER:
+			// survivor's information
+			break;
+		case CTRL_REP_STOP:
+			is_stop_ctrl = 1;
+			break;
+		default:
+			printf("CTRL_run > unknown : %02x\n", in_buffer[0]);
+			continue;
 		}
-
-		printf("\n\n");
 	}
-
-
 
 	return 0;
 }
