@@ -76,6 +76,28 @@ void get_buffer(MultiWiiPacket_t* p, char* dst, int* len){
 }
 /*	internal functions area	end ******************************/
 
+// 오정학 이거 2개 구현하면됨.
+ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size){
+	int read_count;
+
+	read_count = read(handle->serial_fd, buffer, size);
+
+	// 시리얼에서 읽은 값들을 파싱해서 기체 상태 기록하시게나.
+
+
+	return read_count;
+}
+
+ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size){
+	// wirte 할땐 기체상태 쿼리일 뿐이니 상관없는듯?
+	ssize_t write_count;
+
+	write_count = write(handle->serial_fd, buffer, size);
+
+	return write_count;
+}
+
+
 int MWSERIAL_release(MWSerialHandle_t* handle) {
 	if (tcdrain(handle->serial_fd) < 0) {
 		perror("SERIAL_release > tcdrain");

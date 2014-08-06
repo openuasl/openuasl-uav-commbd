@@ -14,6 +14,7 @@
 
 #define CTRL_REP_STOP			0x77
 
+
 int CTRL_init(char* ip);
 int CTRL_start();
 int CTRL_run();

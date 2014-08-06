@@ -29,6 +29,10 @@ typedef struct _MultiWiiPacket_t {
 } MultiWiiPacket_t;
 
 int MWSERIAL_init(MWSerialHandle_t* handle);
+
+ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size);
+ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size);
+
 int MWSERIAL_release(MWSerialHandle_t* handle);
 
 #endif /* __OPENUASL_COMMBD_MULTIWII_SERIAL_CONNECTION_H__ */

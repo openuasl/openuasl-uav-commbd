@@ -52,10 +52,10 @@ int CTRL_run(){
 		case CTRL_MWREQ_HEADER:
 			write(mws_handle->serial_fd, in_buffer+1, read_count-1);
 			usleep(50000);
-			read_count = read(mws_handle->serial_fd, in_buffer, UAVCTRL_BUF_SIZE);
+			read_count = MWSERIAL_read(mws_handle->serial_fd, in_buffer, UAVCTRL_BUF_SIZE);
 			memcpy(out_buffer+1, in_buffer, read_count);
 			out_buffer[0] = CTRL_MWREP_HEADER;
-			write(mws_handle->serial_fd, out_buffer, read_count+1);
+			MWSERIAL_write(mws_handle->serial_fd, out_buffer, read_count+1);
 			break;
 		case CTRL_FKREQ_HEADER:
 			// special function
