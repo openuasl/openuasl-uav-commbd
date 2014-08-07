@@ -46,11 +46,6 @@ void* send_multiwii_status(void* p){
 	while(!is_stop_ctrl){
 		read_count = MWSERIAL_read(mws_handle, in_buffer, UAVCTRL_BUF_SIZE);
 
-		if(read_count <= 0){
-			usleep(1000000);
-			continue;
-		}
-
 		memcpy(out_buffer+1, in_buffer, read_count);
 		out_buffer[0] = CTRL_MWREP_HEADER;
 		SSL_write(ctrl_handle->ssl, out_buffer, read_count+1);

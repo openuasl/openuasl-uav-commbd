@@ -18,7 +18,7 @@ int MWSERIAL_init(MWSerialHandle_t* handle) {
 	while(num < 20){
 		sprintf(path, "%s%d",MWSERIAL_USB_SERIAL_PATH, num);
 
-		handle->serial_fd = open(path, O_RDWR | O_NOCTTY, O_NONBLOCK);
+		handle->serial_fd = open(path, O_RDWR | O_NOCTTY);
 
 		if (handle->serial_fd < 0) {
 			num++;
@@ -94,9 +94,10 @@ ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 
 	read_count = read(handle->serial_fd, buffer, size);
 
-	while(read_count <=0)
-		read_count = read(handle->serial_fd, buffer, size);
-
+	if (tcflush(handle->serial_fd, TCOFLUSH) < 0) {
+		perror("MWSERIAL_read > TCOFLUSH");
+		return 1;
+	}
 	// 시리얼에서 읽은 값들을 파싱해서 기체 상태 기록하시게나.
 
 
@@ -108,6 +109,13 @@ ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size){
 	ssize_t write_count;
 
 	write_count = write(handle->serial_fd, buffer, size);
+
+	if (tcflush(handle->serial_fd, TCIFLUSH) < 0) {
+		perror("MWSERIAL_write > TCIFLUSH");
+		return 1;
+	}
+
+	usleep(500000);
 
 	return write_count;
 }

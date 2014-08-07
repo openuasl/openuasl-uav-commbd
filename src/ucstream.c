@@ -97,7 +97,7 @@ int UCS_run() {
 
 		cvReleaseMat(&cvmat);
 
-		usleep(50000);
+		usleep(100000);
 
 		if (SSL_read(ucs_handle->ssl, recvbuf, 1) > 0) {
 			if (recvbuf[0] == UCS_REP_STOP) {
