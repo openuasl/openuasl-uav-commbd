@@ -94,6 +94,9 @@ ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 
 	read_count = read(handle->serial_fd, buffer, size);
 
+	while(read_count <=0)
+		read_count = read(handle->serial_fd, buffer, size);
+
 	// 시리얼에서 읽은 값들을 파싱해서 기체 상태 기록하시게나.
 
 
