@@ -30,7 +30,7 @@ int MWSERIAL_init(MWSerialHandle_t* handle) {
 	if(num < 20){
 		printf("MWSERIAL_init > %s", path);
 	}else{
-		perror("MWSERIAL_init > %s", path);
+		perror("MWSERIAL_init > ");
 		return 1;
 	}
 
@@ -109,6 +109,16 @@ ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size){
 	return write_count;
 }
 
+int MWSERIAL_special(SpecialFunc sf){
+
+	switch(sf){
+	case SPECIAL_UP:
+		//
+		break;
+	}
+
+	return 0;
+}
 
 int MWSERIAL_release(MWSerialHandle_t* handle) {
 	if (tcdrain(handle->serial_fd) < 0) {

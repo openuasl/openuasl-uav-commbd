@@ -28,10 +28,21 @@ typedef struct _MultiWiiPacket_t {
 	unsigned char checksum;
 } MultiWiiPacket_t;
 
+typedef enum _SpecialFunc{
+	SPECIAL_UP,
+	SPECIAL_DOWN,
+	SPECIAL_MOVE_FRONT,
+	SPECIAL_MOVE_BACK,
+	SPECIAL_MOVE_LEFT,
+	SPECIAL_MOVE_RIGHT
+}SpecialFunc;
+
 int MWSERIAL_init(MWSerialHandle_t* handle);
 
 ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size);
 ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size);
+
+int MWSERIAL_special(SpecialFunc sf);
 
 int MWSERIAL_release(MWSerialHandle_t* handle);
 

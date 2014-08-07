@@ -94,6 +94,8 @@ int CTRL_run(){
 			break;
 		case CTRL_FKREQ_HEADER:
 			// special function
+			// read 한 값에 따라 SPECIAL_UP
+			// MWSERIAL_special();
 			break;
 		case CTRL_SIREQ_HEADER:
 			// survivor's information
