@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
+#include "auth_mgr.h"
 #include "uavctrl.h"
 #include "multiwii_serial_connection.h"
 #include "secure_socket_layer.h"
@@ -48,14 +49,19 @@ int CTRL_run(){
 
 		read_count = SSL_read(ctrl_handle->ssl, in_buffer, UAVCTRL_BUF_SIZE);
 
+		if(read_count <= 0) {
+			usleep(100000);
+			continue;
+		}
+
 		switch(in_buffer[0]){
 		case CTRL_MWREQ_HEADER:
-			write(mws_handle->serial_fd, in_buffer+1, read_count-1);
+			MWSERIAL_write(mws_handle, in_buffer+1, read_count-1);
 			usleep(50000);
-			read_count = MWSERIAL_read(mws_handle->serial_fd, in_buffer, UAVCTRL_BUF_SIZE);
+			read_count = MWSERIAL_read(mws_handle, in_buffer, UAVCTRL_BUF_SIZE);
 			memcpy(out_buffer+1, in_buffer, read_count);
 			out_buffer[0] = CTRL_MWREP_HEADER;
-			MWSERIAL_write(mws_handle->serial_fd, out_buffer, read_count+1);
+			SSL_write(ctrl_handle->ssl, out_buffer, read_count+1);
 			break;
 		case CTRL_FKREQ_HEADER:
 			// special function
@@ -70,6 +76,8 @@ int CTRL_run(){
 			printf("CTRL_run > unknown : %02x\n", in_buffer[0]);
 			continue;
 		}
+
+
 	}
 
 	return 0;

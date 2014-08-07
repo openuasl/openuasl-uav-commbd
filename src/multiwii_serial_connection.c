@@ -12,15 +12,22 @@
 #include "multiwii_serial_connection.h"
 
 int MWSERIAL_init(MWSerialHandle_t* handle) {
-	char buf;
+	char path[16];
+	int num=0;
 
-	handle->serial_fd = open(MWSERIAL_USB_SERIAL_PATH,
-	O_RDWR | O_NOCTTY, O_NONBLOCK);
+	while(num < 5){
+		sprintf(path, "%s%d",MWSERIAL_USB_SERIAL_PATH, num);
 
-	if (handle->serial_fd < 0) {
-		perror("SERIAL_init > open "MWSERIAL_USB_SERIAL_PATH);
-		return 1;
+		handle->serial_fd = open(path, O_RDWR | O_NOCTTY, O_NONBLOCK);
+
+		if (handle->serial_fd < 0) {
+			num++;
+		}else{
+			break;
+		}
 	}
+
+
 
 	bzero(&handle->tio, sizeof(handle->tio));
 

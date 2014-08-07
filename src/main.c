@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <dlfcn.h>
+#include "secure_socket_layer.h"
 #include "ucstream.h"
 #include "uavctrl.h"
 
@@ -38,6 +39,8 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	SSLAYER_load();
+
 	ucs_id = pthread_create(&ucs, NULL, ucstream_thread, argv[1]);
 
 	if (ucs_id < 0) {
@@ -47,6 +50,7 @@ int main(int argc, char* argv[]) {
 
 	pthread_detach(ucs);
 
+
 	if (CTRL_init(argv[1]))
 	{
 		printf("CTRL_init fail\n");
@@ -55,10 +59,13 @@ int main(int argc, char* argv[]) {
 
 	printf("uav control stream module start success\n");
 
-	if(CTRL_start())
+	if(CTRL_start()){
+		printf("CTRL_start fail\n");
 		return EXIT_FAILURE;
+	}
 
 	if(CTRL_run()){
+		printf("CTRL_run fail\n");
 		return EXIT_FAILURE;
 	}
 

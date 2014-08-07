@@ -22,9 +22,7 @@ int is_stop_ucstream;
 int UCS_init(char* ip) {
 
 	ucs_handle = (SslHandle_t*) malloc(sizeof(SslHandle_t));
-
 	SSLAYER_init(ucs_handle, ip, UCSTREAM_SERVER_PORT);
-
 	SSL_connect(ucs_handle->ssl);
 
 	return 0;

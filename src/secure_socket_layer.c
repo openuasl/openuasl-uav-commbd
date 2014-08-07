@@ -22,13 +22,16 @@
 #include "secure_socket_layer.h"
 #include "error_handling.h"
 
+void SSLAYER_load() {
+	SSL_load_error_strings();
+	SSLeay_add_ssl_algorithms();
+}
+
 int SSLAYER_init(SslHandle_t* handle, char* ip, int port) {
 	int err;
 	struct sockaddr_in sa;
 	const SSL_METHOD *meth;
 
-	SSL_load_error_strings();
-	SSLeay_add_ssl_algorithms();
 	meth = SSLv3_client_method();
 	handle->ctx = SSL_CTX_new(meth);
 
@@ -40,8 +43,7 @@ int SSLAYER_init(SslHandle_t* handle, char* ip, int port) {
 	sa.sin_addr.s_addr = inet_addr(ip);
 	sa.sin_port = htons(port);
 
-	err = connect(handle->ssl_fd,
-			(struct sockaddr*) &sa, sizeof(sa));
+	err = connect(handle->ssl_fd, (struct sockaddr*) &sa, sizeof(sa));
 	//BE_error(err, "BE_init_ssl : connect");
 
 	handle->ssl = SSL_new(handle->ctx);
@@ -50,7 +52,7 @@ int SSLAYER_init(SslHandle_t* handle, char* ip, int port) {
 	return 0;
 }
 
-void SSLAYER_release(SslHandle_t* handle){
+void SSLAYER_release(SslHandle_t* handle) {
 	SSL_shutdown(handle->ssl);
 	close(handle->ssl_fd);
 	SSL_free(handle->ssl);

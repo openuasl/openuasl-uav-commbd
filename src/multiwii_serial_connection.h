@@ -3,7 +3,7 @@
 
 //  B300, B1200, B4800, B9600, B19200, B38400, B57600, B115200
 #define MWSERIAL_BAUDRATE B115200
-#define MWSERIAL_USB_SERIAL_PATH "/dev/ttyUSB0"
+#define MWSERIAL_USB_SERIAL_PATH "/dev/ttyUSB"
 #include <termios.h>
 
 // multiwii request message header
