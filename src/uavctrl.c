@@ -88,7 +88,7 @@ int CTRL_run(){
 			continue;
 		}
 
-		switch(in_buffer[0]){
+		switch(in_buffer[0] & 0xFF){
 		case CTRL_MWREQ_HEADER:
 			MWSERIAL_write(mws_handle, in_buffer+1, read_count-1);
 			break;
@@ -104,7 +104,7 @@ int CTRL_run(){
 			is_stop_ctrl = 1;
 			break;
 		default:
-			printf("CTRL_run > unknown : %02x\n", in_buffer[0]);
+			printf("CTRL_run > unknown : %02x\n", in_buffer[0] & 0xFF);
 			continue;
 		}
 
