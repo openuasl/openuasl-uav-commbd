@@ -1,17 +1,19 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/un.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/un.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 
-#include "auth_mgr.h"
+
 #include "uavctrl.h"
 #include "multiwii_serial_connection.h"
 #include "secure_socket_layer.h"
+#include "auth_mgr.h"
 
 MWSerialHandle_t* mws_handle;
 SslHandle_t* ctrl_handle;
@@ -36,11 +38,43 @@ int CTRL_start() {
 	return AUTH_cert_uav(ctrl_handle);
 }
 
+void* send_multiwii_status(void* p){
+	char in_buffer[UAVCTRL_BUF_SIZE];
+	char out_buffer[UAVCTRL_BUF_SIZE];
+	ssize_t read_count;
+
+	while(!is_stop_ctrl){
+		read_count = MWSERIAL_read(mws_handle, in_buffer, UAVCTRL_BUF_SIZE);
+
+		if(read_count <= 0){
+			usleep(1000000);
+			continue;
+		}
+
+		memcpy(out_buffer+1, in_buffer, read_count);
+		out_buffer[0] = CTRL_MWREP_HEADER;
+		SSL_write(ctrl_handle->ssl, out_buffer, read_count+1);
+	}
+
+	return NULL;
+}
+
 int CTRL_run(){
+	pthread_t ths;
+	int ths_id;
 	char in_buffer[UAVCTRL_BUF_SIZE];
 	char out_buffer[UAVCTRL_BUF_SIZE];
 	int flag;
 	ssize_t read_count, i;
+
+	ths_id = pthread_create(&ths, NULL, send_multiwii_status, NULL);
+
+	if (ths_id < 0) {
+		perror("CTRL_run > send_multiwii_status");
+		return 1;
+	}
+
+	pthread_detach(ths);
 
 	flag = fcntl(ctrl_handle->ssl_fd, F_GETFL, 0);
 	fcntl(ctrl_handle->ssl_fd, F_SETFL, flag | O_NONBLOCK);
@@ -57,11 +91,6 @@ int CTRL_run(){
 		switch(in_buffer[0]){
 		case CTRL_MWREQ_HEADER:
 			MWSERIAL_write(mws_handle, in_buffer+1, read_count-1);
-			usleep(50000);
-			read_count = MWSERIAL_read(mws_handle, in_buffer, UAVCTRL_BUF_SIZE);
-			memcpy(out_buffer+1, in_buffer, read_count);
-			out_buffer[0] = CTRL_MWREP_HEADER;
-			SSL_write(ctrl_handle->ssl, out_buffer, read_count+1);
 			break;
 		case CTRL_FKREQ_HEADER:
 			// special function

@@ -15,7 +15,7 @@ int MWSERIAL_init(MWSerialHandle_t* handle) {
 	char path[16];
 	int num=0;
 
-	while(num < 5){
+	while(num < 20){
 		sprintf(path, "%s%d",MWSERIAL_USB_SERIAL_PATH, num);
 
 		handle->serial_fd = open(path, O_RDWR | O_NOCTTY, O_NONBLOCK);
@@ -27,7 +27,12 @@ int MWSERIAL_init(MWSerialHandle_t* handle) {
 		}
 	}
 
-
+	if(num < 20){
+		printf("MWSERIAL_init > %s", path);
+	}else{
+		perror("MWSERIAL_init > %s", path);
+		return 1;
+	}
 
 	bzero(&handle->tio, sizeof(handle->tio));
 
