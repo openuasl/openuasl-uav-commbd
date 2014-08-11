@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-
 #include "uavctrl.h"
 #include "multiwii_serial_connection.h"
 #include "secure_socket_layer.h"
@@ -24,11 +23,26 @@ int CTRL_init(char* ip) {
 
 	// init multiwii serial connection
 	mws_handle = (MWSerialHandle_t*) malloc(sizeof(MWSerialHandle_t));
-	MWSERIAL_init(mws_handle);
+	if(!mws_handle){
+		perror("CTRL_init > MWSerialHandle_t malloc");
+		return 1;
+	}
+
+	if(MWSERIAL_init(mws_handle)){
+		return 1;
+	}
 
 	// init control connection over secure socket layer
 	ctrl_handle = (SslHandle_t*) malloc(sizeof(SslHandle_t));
-	SSLAYER_init(ctrl_handle, ip, UAVCTRL_SERVER_PORT);
+	if(!ctrl_handle){
+		perror("CTRL_init > SslHandle_t malloc");
+		return 1;
+	}
+
+	if(SSLAYER_init(ctrl_handle, ip, UAVCTRL_SERVER_PORT)){
+		return 1;
+	}
+
 	SSL_connect(ctrl_handle->ssl);
 
 	return 0;
@@ -65,7 +79,7 @@ int CTRL_run(){
 	ths_id = pthread_create(&ths, NULL, send_multiwii_status, NULL);
 
 	if (ths_id < 0) {
-		perror("CTRL_run > send_multiwii_status");
+		perror("CTRL_run > pthread_create");
 		return 1;
 	}
 
@@ -79,7 +93,7 @@ int CTRL_run(){
 		read_count = SSL_read(ctrl_handle->ssl, in_buffer, UAVCTRL_BUF_SIZE);
 
 		if(read_count <= 0) {
-			usleep(100000);
+			usleep(1000);
 			continue;
 		}
 
