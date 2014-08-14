@@ -85,17 +85,9 @@ int CTRL_run(){
 
 	pthread_detach(ths);
 
-	flag = fcntl(ctrl_handle->ssl_fd, F_GETFL, 0);
-	fcntl(ctrl_handle->ssl_fd, F_SETFL, flag | O_NONBLOCK);
-
 	while(!is_stop_ctrl){
 
 		read_count = SSL_read(ctrl_handle->ssl, in_buffer, UAVCTRL_BUF_SIZE);
-
-		if(read_count <= 0) {
-			usleep(1000);
-			continue;
-		}
 
 		switch(in_buffer[0] & 0xFF){
 		case CTRL_MWREQ_HEADER:
