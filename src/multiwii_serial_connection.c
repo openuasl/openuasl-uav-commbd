@@ -115,7 +115,7 @@ ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size){
 		return 1;
 	}
 
-	usleep(20000);
+	usleep(50000);
 
 	return write_count;
 }
