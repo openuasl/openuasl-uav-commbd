@@ -80,7 +80,6 @@ int UCS_run() {
 		}
 
 		image = cvRetrieveFrame(capture, 0);
-
 		cvmat = cvEncodeImage(".jpg", image, jpeg_param);
 		total_size = cvmat->cols * cvmat->rows;
 		itobuf(total_size, imgseg + 5);
@@ -96,8 +95,7 @@ int UCS_run() {
 		while (SSL_write(ucs_handle->ssl, cvmat->data.ptr, total_size) <= 0);
 
 		cvReleaseMat(&cvmat);
-
-		usleep(100000);
+		usleep(20000);
 
 		if (SSL_read(ucs_handle->ssl, recvbuf, 1) > 0) {
 			if (recvbuf[0] == UCS_REP_STOP) {
