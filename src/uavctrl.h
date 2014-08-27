@@ -1,6 +1,9 @@
 #ifndef __OPENUASL_COMMBD_UAVCTRL_H__
 #define __OPENUASL_COMMBD_UAVCTRL_H__
 
+#include "mwsc.h"
+#include "sslayer.h"
+
 #define UAVCTRL_SERVER_PORT		12345
 
 #define UAVCTRL_BUF_SIZE		512
@@ -15,10 +18,10 @@
 #define CTRL_REP_STOP			0x77
 
 
-int CTRL_init(char* ip);
-int CTRL_start();
-int CTRL_run();
-void CTRL_end();
+int CTRL_init(MWSerialHandle_t** mws, SslHandle_t** ctrl, char* ip);
+int CTRL_start(SslHandle_t* ctrl);
+int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl);
+void CTRL_end(MWSerialHandle_t* mws, SslHandle_t* ctrl);
 
 
 

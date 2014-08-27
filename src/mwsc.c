@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "multiwii_serial_connection.h"
+#include "mwsc.h"
 
 int MWSERIAL_init(MWSerialHandle_t* handle) {
 	char path[16];
@@ -96,7 +96,7 @@ ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 
 	if (tcflush(handle->serial_fd, TCOFLUSH) < 0) {
 		perror("MWSERIAL_read > TCOFLUSH");
-		return 1;
+		return -1;
 	}
 	// 시리얼에서 읽은 값들을 파싱해서 기체 상태 기록하시게나.
 
@@ -114,8 +114,6 @@ ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size){
 		perror("MWSERIAL_write > TCIFLUSH");
 		return 1;
 	}
-
-	usleep(50000);
 
 	return write_count;
 }

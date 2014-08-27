@@ -19,7 +19,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include "secure_socket_layer.h"
+#include "sslayer.h"
 #include "error_handling.h"
 
 void SSLAYER_load() {

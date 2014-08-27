@@ -11,30 +11,26 @@
 #include <opencv/highgui.h> // gui
 
 #include "ucstream.h"
-#include "secure_socket_layer.h"
 #include "auth_mgr.h"
 #include "error_handling.h"
 
-SslHandle_t* ucs_handle;
+int UCS_init(SslHandle_t** ucs, char* ip) {
 
-int is_stop_ucstream;
+	*ucs = (SslHandle_t*) malloc(sizeof(SslHandle_t));
+	if(SSLAYER_init(*ucs, ip, UCSTREAM_SERVER_PORT)){
+		perror("UCS_init : SSLAYER_init");
+		return 1;
+	}
 
-int UCS_init(char* ip) {
-
-	ucs_handle = (SslHandle_t*) malloc(sizeof(SslHandle_t));
-	SSLAYER_init(ucs_handle, ip, UCSTREAM_SERVER_PORT);
-	SSL_connect(ucs_handle->ssl);
+	SSL_connect((*ucs)->ssl);
 
 	return 0;
 }
 
 // thread
-int UCS_start() {
-	return AUTH_cert_uav(ucs_handle);
+int UCS_start(SslHandle_t* ucs) {
+	return AUTH_cert_uav(ucs);
 }
-
-int jpeg_param[3] = { CV_IMWRITE_JPEG_QUALITY,
-UCS_JPEG_QUALITY, 0 };
 
 void itobuf(int i, char* buf) {
 	buf[0] = 0xff & (i >> 24);
@@ -43,24 +39,23 @@ void itobuf(int i, char* buf) {
 	buf[3] = 0xff & (i);
 }
 
-void convert_non_block_mode() {
-	int flag = fcntl(ucs_handle->ssl_fd, F_GETFL, 0);
-	fcntl(ucs_handle->ssl_fd, F_SETFL, flag | O_NONBLOCK);
-}
-
-int UCS_run() {
+int UCS_run(SslHandle_t* ucs) {
 	IplImage* image;
 	CvCapture* capture;
 	CvMat* cvmat;
 	char imgseg[9];
 	char recvbuf[2];
 	size_t tsize, ssize, total_size;
-	int err;
+	int err, flag;
+	int is_stop_ucstream;
+	static const int jpeg_param[3] = {
+			CV_IMWRITE_JPEG_QUALITY,	UCS_JPEG_QUALITY, 0 };
 
 	image = NULL;
 	capture = cvCaptureFromCAM(0);
 
-	convert_non_block_mode();
+	flag = fcntl(ucs->ssl_fd, F_GETFL, 0);
+	fcntl(ucs->ssl_fd, F_SETFL, flag | O_NONBLOCK);
 
 	// 1280 x 800 tablet size
 	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH,
@@ -84,7 +79,7 @@ int UCS_run() {
 		total_size = cvmat->cols * cvmat->rows;
 		itobuf(total_size, imgseg + 5);
 
-		if (SSL_write(ucs_handle->ssl, imgseg, 9) <= 0) {
+		if (SSL_write(ucs->ssl, imgseg, 9) <= 0) {
 			perror("UCS_run : UCS_REQ_IMGSEG");
 			cvReleaseMat(&cvmat);
 			continue;
@@ -92,12 +87,12 @@ int UCS_run() {
 
 		ssize = 0;
 
-		while (SSL_write(ucs_handle->ssl, cvmat->data.ptr, total_size) <= 0);
+		while (SSL_write(ucs->ssl, cvmat->data.ptr, total_size) <= 0);
 
 		cvReleaseMat(&cvmat);
-		usleep(20000);
+		usleep(100000);
 
-		if (SSL_read(ucs_handle->ssl, recvbuf, 1) > 0) {
+		if (SSL_read(ucs->ssl, recvbuf, 1) > 0) {
 			if (recvbuf[0] == UCS_REP_STOP) {
 				is_stop_ucstream = 1;
 			} else {
@@ -113,9 +108,9 @@ int UCS_run() {
 	return 0;
 }
 
-void UCS_end() {
-	SSLAYER_release(ucs_handle);
-	free(ucs_handle);
-	ucs_handle = NULL;
+void UCS_end(SslHandle_t* ucs) {
+	SSLAYER_release(ucs);
+	free(ucs);
+	ucs = NULL;
 }
 

@@ -1,6 +1,6 @@
 #ifndef __OPENUASL_COMMBD_UCSTREAM_H__
 #define __OPENUASL_COMMBD_UCSTREAM_H__
-
+#include "sslayer.h"
 
 #define UCSTREAM_SERVER_PORT	54321
 
@@ -13,10 +13,10 @@
 #define UCS_SENDBUF_SIZE			4096
 #define UCS_JPEG_QUALITY			50
 
-int UCS_init(char* ip);
-int UCS_start();
-int UCS_run();
-void UCS_end();
+int UCS_init(SslHandle_t** ucs, char* ip);
+int UCS_start(SslHandle_t* ucs) ;
+int UCS_run(SslHandle_t* ucs);
+void UCS_end(SslHandle_t* ucs);
 
 
 #endif /* __OPENUASL_COMMBD_UCSTREAM_H__ */
