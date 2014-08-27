@@ -11,7 +11,7 @@
 #include <opencv/highgui.h> // gui
 
 #include "ucstream.h"
-#include "auth_mgr.h"
+#include "authmgr.h"
 #include "error_handling.h"
 
 int UCS_init(SslHandle_t** ucs, char* ip) {
@@ -111,6 +111,5 @@ int UCS_run(SslHandle_t* ucs) {
 void UCS_end(SslHandle_t* ucs) {
 	SSLAYER_release(ucs);
 	free(ucs);
-	ucs = NULL;
 }
 

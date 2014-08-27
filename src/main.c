@@ -63,6 +63,8 @@ void* ctrlcmd_thread(void* argv) {
 
 		sleep(5);
 	}
+
+	return EXIT_SUCCESS;
 }
 
 // 1 = ip

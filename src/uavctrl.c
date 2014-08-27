@@ -10,7 +10,7 @@
 #include <errno.h>
 
 #include "uavctrl.h"
-#include "auth_mgr.h"
+#include "authmgr.h"
 
 int CTRL_init(MWSerialHandle_t** mws, SslHandle_t** ctrl, char* ip) {
 
@@ -118,9 +118,7 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 void CTRL_end(MWSerialHandle_t* mws, SslHandle_t* ctrl) {
 	MWSERIAL_release(mws);
 	free(mws);
-	mws = NULL;
 
 	SSLAYER_release(ctrl);
 	free(ctrl);
-	ctrl = NULL;
 }
