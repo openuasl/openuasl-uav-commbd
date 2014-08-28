@@ -14,22 +14,16 @@
 #include "authmgr.h"
 #include "error_handling.h"
 
-int UCS_init(SslHandle_t** ucs, char* ip) {
+int UCS_init(SslHandle_t* ucs, char* ip) {
 
-	*ucs = (SslHandle_t*) malloc(sizeof(SslHandle_t));
-	if(SSLAYER_init(*ucs, ip, UCSTREAM_SERVER_PORT)){
-		perror("UCS_init : SSLAYER_init");
+	if(SSLAYER_init(ucs, ip, UCSTREAM_SERVER_PORT)){
+		perror("UCS_init > SSLAYER_init");
 		return 1;
 	}
 
-	SSL_connect((*ucs)->ssl);
+	SSL_connect(ucs->ssl);
 
 	return 0;
-}
-
-// thread
-int UCS_start(SslHandle_t* ucs) {
-	return AUTH_cert_uav(ucs);
 }
 
 void itobuf(int i, char* buf) {
@@ -71,7 +65,7 @@ int UCS_run(SslHandle_t* ucs) {
 	while (!is_stop_ucstream) {
 
 		while (!cvGrabFrame(capture)) {
-			perror("UCS_run : cvGrabFrame\n");
+			perror("UCS_run > cvGrabFrame\n");
 		}
 
 		image = cvRetrieveFrame(capture, 0);
@@ -80,7 +74,7 @@ int UCS_run(SslHandle_t* ucs) {
 		itobuf(total_size, imgseg + 5);
 
 		if (SSL_write(ucs->ssl, imgseg, 9) <= 0) {
-			perror("UCS_run : UCS_REQ_IMGSEG");
+			perror("UCS_run > UCS_REQ_IMGSEG");
 			cvReleaseMat(&cvmat);
 			continue;
 		}
@@ -96,7 +90,7 @@ int UCS_run(SslHandle_t* ucs) {
 			if (recvbuf[0] == UCS_REP_STOP) {
 				is_stop_ucstream = 1;
 			} else {
-				perror("UCS_run : UCS_REP_STOP");
+				perror("UCS_run > UCS_REP_STOP");
 				break;
 			}
 		}
@@ -110,6 +104,5 @@ int UCS_run(SslHandle_t* ucs) {
 
 void UCS_end(SslHandle_t* ucs) {
 	SSLAYER_release(ucs);
-	free(ucs);
 }
 

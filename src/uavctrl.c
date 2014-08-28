@@ -12,37 +12,21 @@
 #include "uavctrl.h"
 #include "authmgr.h"
 
-int CTRL_init(MWSerialHandle_t** mws, SslHandle_t** ctrl, char* ip) {
+int CTRL_init(MWSerialHandle_t* mws, SslHandle_t* ctrl, char* ip) {
 
-	// init multiwii serial connection
-	*mws = (MWSerialHandle_t*) malloc(sizeof(MWSerialHandle_t));
-	if(!(*mws)){
-		perror("CTRL_init > MWSerialHandle_t malloc");
+	if(MWSERIAL_init(mws)){
+		perror("CTRL_init > MWSERIAL_init");
 		return 1;
 	}
 
-	if(MWSERIAL_init(*mws)){
+	if(SSLAYER_init(ctrl, ip, UAVCTRL_SERVER_PORT)){
+		perror("CTRL_init > SSLAYER_init");
 		return 1;
 	}
 
-	// init control connection over secure socket layer
-	*ctrl = (SslHandle_t*) malloc(sizeof(SslHandle_t));
-	if(!(*ctrl)){
-		perror("CTRL_init > SslHandle_t malloc");
-		return 1;
-	}
-
-	if(SSLAYER_init(*ctrl, ip, UAVCTRL_SERVER_PORT)){
-		return 1;
-	}
-
-	SSL_connect((*ctrl)->ssl);
+	SSL_connect(ctrl->ssl);
 
 	return 0;
-}
-
-int CTRL_start(SslHandle_t* ctrl) {
-	return AUTH_cert_uav(ctrl);
 }
 
 void* send_multiwii_status(void** p){
@@ -117,8 +101,5 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 
 void CTRL_end(MWSerialHandle_t* mws, SslHandle_t* ctrl) {
 	MWSERIAL_release(mws);
-	free(mws);
-
 	SSLAYER_release(ctrl);
-	free(ctrl);
 }

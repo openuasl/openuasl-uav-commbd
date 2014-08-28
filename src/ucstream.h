@@ -13,8 +13,7 @@
 #define UCS_SENDBUF_SIZE			4096
 #define UCS_JPEG_QUALITY			50
 
-int UCS_init(SslHandle_t** ucs, char* ip);
-int UCS_start(SslHandle_t* ucs) ;
+int UCS_init(SslHandle_t* ucs, char* ip);
 int UCS_run(SslHandle_t* ucs);
 void UCS_end(SslHandle_t* ucs);
 
