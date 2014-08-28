@@ -10,7 +10,7 @@ double SVINFO_get_distance(int rssi){
 
 	r = (double)rssi * 1.0 / p;
 
-	if(r < 1.0)
+	if((double)r < 1.0)
 		r = pow(r, 10);
 	else{
 		r = (0.89976) * pow(r,7.7095) + 0.111;
