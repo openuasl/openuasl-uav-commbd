@@ -1,5 +1,7 @@
 #include "btnav.h"
+#include "svinfomgr.h"
 #include <stdlib.h>
+#include <sys/ioctl.h>
 
 int BTNAV_init(BTNavHandle_t* btn){
 	if((btn->dev_id = hci_get_route(NULL)) < 0){
@@ -23,8 +25,14 @@ int BTNAV_init(BTNavHandle_t* btn){
 
 int BTNAV_run(BTNavHandle_t* btn){
 	int num_rsp, i, flags = IREQ_CACHE_FLUSH;
-	char addr[19] = {0,};
-	char name[248] = {0,};
+	char addr[19] = {0,}, name[248] = {0,};
+	struct hci_conn_info_req conn;
+	unsigned int ptype =
+			HCI_DM1 | HCI_DM3 | HCI_DM5 |
+			HCI_DH1 | HCI_DH3 | HCI_DH5;
+	uint64_t handle;
+	int8_t rssi;
+	double dist;
 
 	num_rsp = hci_inquiry(btn->dev_id,
 				8, MAX_RSP, NULL, &btn->inq, flags);
@@ -35,11 +43,36 @@ int BTNAV_run(BTNavHandle_t* btn){
 		for (i = 0; i < num_rsp; i++) {
 			ba2str(&(btn->inq + i)->bdaddr, addr);
 			memset(name, 0, sizeof(name));
+
+			if (hci_create_connection(btn->hci_fd,
+					&(btn->inq + i)->bdaddr,	htobs(ptype),
+					(btn->inq + i)->clock_offset, 0x01, &handle, 0) < 0) {
+				perror("BTNAV_run > hci_create_connection");
+				continue;
+			}
+
+			bacpy(&conn.bdaddr, &(btn->inq + i)->bdaddr);
+			conn.type = ACL_LINK;
+
+			if (ioctl(btn->hci_fd, HCIGETCONNINFO,
+					(unsigned long)&conn) < 0) {
+				perror("BTNAV_run > ioctl");
+				continue;
+			}
+
+			if (hci_read_rssi(btn->hci_fd, htobs(conn.conn_info->handle),
+					&rssi, 1000) < 0) {
+				perror("BTNAV_run > hci_read_rssi");
+				continue;
+			}
+
 			if (hci_read_remote_name(btn->hci_fd, &(btn->inq + i)->bdaddr,
 					sizeof(name), name, 0) < 0)
 				strcpy(name, "[unknown]");
 
-			printf("[%s]%s\n", addr, name);
+			dist = SVINFO_get_distance(rssi);
+
+			printf("[%s]%s, %d, %lf\n", addr, name, rssi, dist);
 		}
 
 		num_rsp = hci_inquiry(btn->dev_id,

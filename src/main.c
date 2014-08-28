@@ -113,7 +113,5 @@ int main(int argc, char* argv[]) {
 		BTNAV_end(&bt);
 	}
 
-
-
 	return EXIT_SUCCESS;
 }

@@ -86,6 +86,8 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 			break;
 		case CTRL_SIREQ_HEADER:
 			// survivor's information
+
+
 			break;
 		case CTRL_REP_STOP:
 			is_stop_ctrl = 1;
