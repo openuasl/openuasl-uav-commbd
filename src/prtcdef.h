@@ -28,6 +28,6 @@ typedef enum _UaslProtocolType{
  *  */
 
 
-
+void itobuf(int i, char* buf);
 
 #endif /* __OPENUASL_PROTOCOL_H__ */

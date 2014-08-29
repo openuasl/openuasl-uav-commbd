@@ -10,11 +10,12 @@
 #include <errno.h>
 
 #include "uavctrl.h"
-#include "authmgr.h"
+#include "auth.h"
+#include "svinfo.h"
 
 int CTRL_init(MWSerialHandle_t* mws, SslHandle_t* ctrl, char* ip) {
 
-	if(MWSERIAL_init(mws)){
+	if(MWSC_init(mws)){
 		perror("CTRL_init > MWSERIAL_init");
 		return 1;
 	}
@@ -38,7 +39,7 @@ void* send_multiwii_status(void** p){
 	int* is_stop_ctrl = (int*)p[2];
 
 	while(!(*is_stop_ctrl)){
-		read_count = MWSERIAL_read(mws, in_buffer, UAVCTRL_BUF_SIZE);
+		read_count = MWSC_read(mws, in_buffer, UAVCTRL_BUF_SIZE);
 
 		if(read_count == -1)	return NULL;
 
@@ -55,7 +56,7 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 	int ths_id;
 	char in_buffer[UAVCTRL_BUF_SIZE];
 	char out_buffer[UAVCTRL_BUF_SIZE];
-	int flag, is_stop_ctrl;
+	int flag, is_stop_ctrl=0;
 	ssize_t read_count, i;
 	void* thrp[3];
 	thrp[0] = mws;
@@ -75,9 +76,11 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 
 		read_count = SSL_read(ctrl->ssl, in_buffer, UAVCTRL_BUF_SIZE);
 
+		SVINFO_send_svinfos(ctrl);
+
 		switch(in_buffer[0] & 0xFF){
 		case CTRL_MWREQ_HEADER:
-			MWSERIAL_write(mws, in_buffer+1, read_count-1);
+			MWSC_write(mws, in_buffer+1, read_count-1);
 			break;
 		case CTRL_FKREQ_HEADER:
 			// special function
@@ -86,7 +89,6 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 			break;
 		case CTRL_SIREQ_HEADER:
 			// survivor's information
-
 
 			break;
 		case CTRL_REP_STOP:
@@ -102,6 +104,6 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 }
 
 void CTRL_end(MWSerialHandle_t* mws, SslHandle_t* ctrl) {
-	MWSERIAL_release(mws);
+	MWSC_release(mws);
 	SSLAYER_release(ctrl);
 }

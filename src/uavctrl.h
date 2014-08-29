@@ -5,7 +5,6 @@
 #include "sslayer.h"
 
 #define UAVCTRL_SERVER_PORT		12345
-
 #define UAVCTRL_BUF_SIZE		512
 
 #define CTRL_MWREQ_HEADER		0x90

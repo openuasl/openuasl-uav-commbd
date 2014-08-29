@@ -57,4 +57,6 @@ void SSLAYER_release(SslHandle_t* handle) {
 	close(handle->ssl_fd);
 	SSL_free(handle->ssl);
 	SSL_CTX_free(handle->ctx);
+	handle->ssl = NULL;
+	handle->ctx = NULL;
 }

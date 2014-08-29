@@ -1,8 +1,13 @@
-#include "svinfomgr.h"
+#include "svinfo.h"
+#include "btnav.h"
+#include "uavctrl.h"
+#include "prtcdef.h"
 #include <math.h>
+#include <string.h>
+
 
 double SVINFO_get_distance(int rssi){
-	static const double p = -70;
+	static const double p = -1; // m/dbm
 	double r;
 
 	if(rssi == 0)
@@ -19,7 +24,45 @@ double SVINFO_get_distance(int rssi){
 	return r;
 }
 
+int number_of_svinfo;
+SVINFO_t svinfo[BTNAV_MAX_RSP];
 
+void SVINFO_find_bt_callaback(
+		char* addr, char* name, int rssi){
+	strcpy(svinfo[number_of_svinfo].addr, addr);
+	strcpy(svinfo[number_of_svinfo].name, name);
+	svinfo[number_of_svinfo].rssi = rssi;
+	svinfo[number_of_svinfo++].distance = SVINFO_get_distance(rssi);
+}
+
+void SVINFO_send_svinfos(SslHandle_t* ctrl){
+	char buffer[UAVCTRL_BUF_SIZE];
+	int i, name_len;
+
+	if(!number_of_svinfo)
+		return;
+
+	for (i = 0; i < number_of_svinfo; i++) {
+		buffer[0] = CTRL_SIREP_HEADER;
+		memcpy(buffer + 1, svinfo[i].addr, BTNAV_MAX_ADDR_LENGTH);
+
+		name_len = strlen(svinfo[i].name);
+		itobuf(name_len, buffer + 20);
+		memcpy(buffer + 24, svinfo[i].name, name_len);
+
+		itobuf(svinfo[i].rssi, buffer + 24 + name_len);
+		itobuf(svinfo[i].distance, buffer + 28 + name_len);
+
+		printf("%p %p %d\n", ctrl->ssl, ctrl->ctx, ctrl->ssl_fd);
+
+		if (ctrl->ssl != NULL)
+			SSL_write(ctrl->ssl, buffer, 32 + name_len);
+
+		printf("%s %s %d\n", svinfo[i].addr, svinfo[i].name, svinfo[i].rssi);
+	}
+
+	number_of_svinfo = 0;
+}
 
 /*
 rollingRssi = (beacon.rssi * kFilteringFactor) + (rollingRssi * (1.0 - kFilteringFactor));

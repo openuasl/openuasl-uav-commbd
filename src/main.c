@@ -5,7 +5,7 @@
 #include <dlfcn.h>
 
 #include "sslayer.h"
-#include "authmgr.h"
+#include "auth.h"
 #include "ucstream.h"
 #include "uavctrl.h"
 #include "btnav.h"
@@ -40,10 +40,11 @@ void* ucstream_thread(void* argv) {
 	return 0;
 }
 
+SslHandle_t ctrl;
+
 void* ctrlcmd_thread(void* argv) {
 
 	MWSerialHandle_t mws;
-	SslHandle_t ctrl;
 
 	while (1) {
 		if (CTRL_init(&mws, &ctrl, argv)) {
@@ -72,7 +73,7 @@ void* ctrlcmd_thread(void* argv) {
 // 1 = ip
 int main(int argc, char* argv[]) {
 
-	pthread_t ucs, ctrl;
+	pthread_t thid_ucs, thid_ctrl;
 	int ucs_id, ctrl_id;
 
 	if (argc != 2) {
@@ -82,23 +83,24 @@ int main(int argc, char* argv[]) {
 
 	SSLAYER_load();
 
-	ucs_id = pthread_create(&ucs, NULL, ucstream_thread, argv[1]);
+	ucs_id = pthread_create(&thid_ucs, NULL, ucstream_thread, argv[1]);
 
 	if (ucs_id < 0) {
 		perror("main > pthread_create(ucs_id)");
 		return EXIT_FAILURE;
 	}
 
-	pthread_detach(ucs);
+	pthread_detach(thid_ucs);
 
-	ctrl_id = pthread_create(&ctrl, NULL, ctrlcmd_thread, argv[1]);
+	ctrl_id = pthread_create(&thid_ctrl, NULL, ctrlcmd_thread, argv[1]);
 
 	if (ctrl_id < 0) {
 		perror("main > pthread_create(ctrl_id)");
 		return EXIT_FAILURE;
 	}
 
-	pthread_detach(ctrl);
+	pthread_detach(thid_ctrl);
+
 
 	{
 		BTNavHandle_t bt;

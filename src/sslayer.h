@@ -1,9 +1,9 @@
-#ifndef _OPENUASL_COMMBD_SECURE_SOCKET_LAYER_H_
-#define _OPENUASL_COMMBD_SECURE_SOCKET_LAYER_H_
+#ifndef _OPENUASL_COMMBD_SSLAYER_H_
+#define _OPENUASL_COMMBD_SSLAYER_H_
 
-#define INTERMEDIATE_SERVER_IP		"210.118.69.65"
-#define INTERMEDIATE_SERVER_PORT	12345
 #include <openssl/ssl.h>
+
+#define INTERMEDIATE_SERVER_PORT	12345
 
 typedef struct _SslHandle_t{
 	SSL* ssl;
@@ -18,4 +18,4 @@ void SSLAYER_release(SslHandle_t* handle);
 
 
 
-#endif /* _OPENUASL_COMMBD_SECURE_SOCKET_LAYER_H_ */
+#endif /* _OPENUASL_COMMBD_SSLAYER_H_ */

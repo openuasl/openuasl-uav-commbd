@@ -1,5 +1,5 @@
 #include "btnav.h"
-#include "svinfomgr.h"
+#include "svinfo.h"
 #include <stdlib.h>
 #include <sys/ioctl.h>
 
@@ -15,7 +15,7 @@ int BTNAV_init(BTNavHandle_t* btn){
 	}
 
 	if((btn->inq = (inquiry_info*)
-			malloc(MAX_RSP * sizeof(inquiry_info))) == NULL){
+			malloc(BTNAV_MAX_RSP * sizeof(inquiry_info))) == NULL){
 		perror("BTNAV_init > malloc inquiry_info");
 		return 1;
 	}
@@ -25,7 +25,8 @@ int BTNAV_init(BTNavHandle_t* btn){
 
 int BTNAV_run(BTNavHandle_t* btn){
 	int num_rsp, i, flags = IREQ_CACHE_FLUSH;
-	char addr[19] = {0,}, name[248] = {0,};
+	char addr[BTNAV_MAX_ADDR_LENGTH] = {0,},
+			name[BTNAV_MAX_NAME_LENGTH] = {0,};
 	struct hci_conn_info_req conn;
 	unsigned int ptype =
 			HCI_DM1 | HCI_DM3 | HCI_DM5 |
@@ -35,7 +36,7 @@ int BTNAV_run(BTNavHandle_t* btn){
 	double dist;
 
 	num_rsp = hci_inquiry(btn->dev_id,
-				8, MAX_RSP, NULL, &btn->inq, flags);
+				8, BTNAV_MAX_RSP, NULL, &btn->inq, flags);
 
 	printf("hci_inquiry : %d\n", num_rsp);
 
@@ -70,13 +71,11 @@ int BTNAV_run(BTNavHandle_t* btn){
 					sizeof(name), name, 0) < 0)
 				strcpy(name, "[unknown]");
 
-			dist = SVINFO_get_distance(rssi);
-
-			printf("[%s]%s, %d, %lf\n", addr, name, rssi, dist);
+			SVINFO_find_bt_callaback(addr, name, rssi);
 		}
 
 		num_rsp = hci_inquiry(btn->dev_id,
-						8, MAX_RSP, NULL, &btn->inq, flags);
+						8, BTNAV_MAX_RSP, NULL, &btn->inq, flags);
 		printf("hci_inquiry : %d\n", num_rsp);
 	}
 

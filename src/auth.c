@@ -4,7 +4,7 @@
 
 #include <openssl/sha.h>
 
-#include "authmgr.h"
+#include "auth.h"
 #include "error_handling.h"
 
 int AUTH_get_disk_id(char* buf) {

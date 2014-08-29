@@ -1,5 +1,5 @@
-#ifndef __OPENUASL_COMMBD_AUTH_MGR_H__
-#define __OPENUASL_COMMBD_AUTH_MGR_H__
+#ifndef __OPENUASL_COMMBD_AUTH_H__
+#define __OPENUASL_COMMBD_AUTH_H__
 
 #include "sslayer.h"
 
@@ -17,4 +17,4 @@ int AUTH_get_uav_id(char* diskid, char* uavid);
 
 int AUTH_cert_uav(SslHandle_t* handle);
 
-#endif /* __OPENUASL_COMMBD_AUTH_MGR_H__ */
+#endif /* __OPENUASL_COMMBD_AUTH_H__ */

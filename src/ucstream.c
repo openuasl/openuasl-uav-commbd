@@ -11,7 +11,8 @@
 #include <opencv/highgui.h> // gui
 
 #include "ucstream.h"
-#include "authmgr.h"
+#include "auth.h"
+#include "prtcdef.h"
 #include "error_handling.h"
 
 int UCS_init(SslHandle_t* ucs, char* ip) {
@@ -26,13 +27,6 @@ int UCS_init(SslHandle_t* ucs, char* ip) {
 	return 0;
 }
 
-void itobuf(int i, char* buf) {
-	buf[0] = 0xff & (i >> 24);
-	buf[1] = 0xff & (i >> 16);
-	buf[2] = 0xff & (i >> 8);
-	buf[3] = 0xff & (i);
-}
-
 int UCS_run(SslHandle_t* ucs) {
 	IplImage* image;
 	CvCapture* capture;
@@ -41,7 +35,7 @@ int UCS_run(SslHandle_t* ucs) {
 	char recvbuf[2];
 	size_t tsize, ssize, total_size;
 	int err, flag;
-	int is_stop_ucstream;
+	int is_stop_ucstream=0;
 	static const int jpeg_param[3] = {
 			CV_IMWRITE_JPEG_QUALITY,	UCS_JPEG_QUALITY, 0 };
 

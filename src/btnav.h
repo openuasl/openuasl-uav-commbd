@@ -6,7 +6,9 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 
-#define MAX_RSP	255
+#define BTNAV_MAX_ADDR_LENGTH		19
+#define BTNAV_MAX_NAME_LENGTH		248
+#define BTNAV_MAX_RSP				255
 
 typedef struct _BTNavHandle_t{
 	inquiry_info* inq;

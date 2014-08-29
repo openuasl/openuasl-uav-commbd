@@ -1,10 +1,11 @@
-#ifndef __OPENUASL_COMMBD_MULTIWII_SERIAL_CONNECTION_H__
-#define __OPENUASL_COMMBD_MULTIWII_SERIAL_CONNECTION_H__
+#ifndef __OPENUASL_COMMBD_MWSC_H__
+#define __OPENUASL_COMMBD_MWSC_H__
+
+#include <termios.h>
 
 //  B300, B1200, B4800, B9600, B19200, B38400, B57600, B115200
 #define MWSERIAL_BAUDRATE B115200
 #define MWSERIAL_USB_SERIAL_PATH "/dev/ttyUSB"
-#include <termios.h>
 
 // multiwii request message header
 #define MWSERIAL_REQ_HEADER		"$M<"
@@ -37,13 +38,13 @@ typedef enum _SpecialFunc{
 	SPECIAL_MOVE_RIGHT
 }SpecialFunc;
 
-int MWSERIAL_init(MWSerialHandle_t* handle);
+int MWSC_init(MWSerialHandle_t* handle);
 
-ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size);
-ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size);
+ssize_t MWSC_read(MWSerialHandle_t* handle, void* buffer, size_t size);
+ssize_t MWSC_write(MWSerialHandle_t* handle, void* buffer, size_t size);
 
-int MWSERIAL_special(SpecialFunc sf);
+int MWSC_special(SpecialFunc sf);
 
-int MWSERIAL_release(MWSerialHandle_t* handle);
+int MWSC_release(MWSerialHandle_t* handle);
 
-#endif /* __OPENUASL_COMMBD_MULTIWII_SERIAL_CONNECTION_H__ */
+#endif /* __OPENUASL_COMMBD_MWSC_H__ */

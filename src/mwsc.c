@@ -11,7 +11,7 @@
 
 #include "mwsc.h"
 
-int MWSERIAL_init(MWSerialHandle_t* handle) {
+int MWSC_init(MWSerialHandle_t* handle) {
 	char path[16];
 	int num=0;
 
@@ -89,13 +89,13 @@ void get_buffer(MultiWiiPacket_t* p, char* dst, int* len){
 /*	internal functions area	end ******************************/
 
 // 오정학 이거 2개 구현하면됨.
-ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size){
+ssize_t MWSC_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 	int read_count;
 
 	read_count = read(handle->serial_fd, buffer, size);
 
 	if (tcflush(handle->serial_fd, TCOFLUSH) < 0) {
-		perror("MWSERIAL_read > TCOFLUSH");
+		perror("MWSERIAL_read > tcflush");
 		return -1;
 	}
 	// 시리얼에서 읽은 값들을 파싱해서 기체 상태 기록하시게나.
@@ -104,21 +104,21 @@ ssize_t MWSERIAL_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 	return read_count;
 }
 
-ssize_t MWSERIAL_write(MWSerialHandle_t* handle, void* buffer, size_t size){
+ssize_t MWSC_write(MWSerialHandle_t* handle, void* buffer, size_t size){
 	// wirte 할땐 기체상태 쿼리일 뿐이니 상관없는듯?
 	ssize_t write_count;
 
 	write_count = write(handle->serial_fd, buffer, size);
 
 	if (tcflush(handle->serial_fd, TCIFLUSH) < 0) {
-		perror("MWSERIAL_write > TCIFLUSH");
+		perror("MWSERIAL_write > tcflush");
 		return 1;
 	}
 
 	return write_count;
 }
 
-int MWSERIAL_special(SpecialFunc sf){
+int MWSC_special(SpecialFunc sf){
 
 	switch(sf){
 	case SPECIAL_UP:
@@ -129,7 +129,7 @@ int MWSERIAL_special(SpecialFunc sf){
 	return 0;
 }
 
-int MWSERIAL_release(MWSerialHandle_t* handle) {
+int MWSC_release(MWSerialHandle_t* handle) {
 	if (tcdrain(handle->serial_fd) < 0) {
 		perror("SERIAL_release > tcdrain");
 		return 1;
