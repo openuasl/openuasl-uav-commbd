@@ -19,17 +19,20 @@ void* ucstream_thread(void* argv) {
 	while (1) {
 		if (UCS_init(&ucs, argv)){
 			printf("UCS_init fail\n");
-			return 1;
+			UCS_end(&ucs);
+			continue;
 		}
 
 		if (AUTH_cert_uav(&ucs)){
 			printf("AUTH_cert_uav(ucs) fail\n");
-			return 1;
+			UCS_end(&ucs);
+			continue;
 		}
 
 		if (UCS_run(&ucs)){
 			printf("UCS_run fail\n");
-			return 1;
+			UCS_end(&ucs);
+			continue;
 		}
 
 		UCS_end(&ucs);
@@ -49,17 +52,20 @@ void* ctrlcmd_thread(void* argv) {
 	while (1) {
 		if (CTRL_init(&mws, &ctrl, argv)) {
 			printf("CTRL_init fail\n");
-			return 1;
+			CTRL_end(&mws, &ctrl);
+			continue;
 		}
 
 		if (AUTH_cert_uav(&ctrl)) {
 			printf("AUTH_cert_uav(&ctrl) fail\n");
-			return 1;
+			CTRL_end(&mws, &ctrl);
+			continue;
 		}
 
 		if (CTRL_run(&mws, &ctrl)) {
 			printf("CTRL_run fail\n");
-			return 1;
+			CTRL_end(&mws, &ctrl);
+			continue;
 		}
 
 		CTRL_end(&mws, &ctrl);
@@ -105,10 +111,12 @@ int main(int argc, char* argv[]) {
 	{
 		BTNavHandle_t bt;
 		if(BTNAV_init(&bt)){
+			printf("BTNAV_init fail\n");
 			return 1;
 		}
 
 		if(BTNAV_run(&bt)){
+			printf("BTNAV_run fail\n");
 			return 1;
 		}
 

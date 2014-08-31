@@ -53,8 +53,6 @@ void SVINFO_send_svinfos(SslHandle_t* ctrl){
 		itobuf(svinfo[i].rssi, buffer + 24 + name_len);
 		itobuf(svinfo[i].distance, buffer + 28 + name_len);
 
-		printf("%p %p %d\n", ctrl->ssl, ctrl->ctx, ctrl->ssl_fd);
-
 		if (ctrl->ssl != NULL)
 			SSL_write(ctrl->ssl, buffer, 32 + name_len);
 
