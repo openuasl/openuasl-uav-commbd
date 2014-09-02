@@ -28,7 +28,7 @@ int MWSC_init(MWSerialHandle_t* handle) {
 	}
 
 	if(num < 20){
-		printf("MWSERIAL_init > %s", path);
+		printf("MWSERIAL_init > %s\n", path);
 	}else{
 		perror("MWSERIAL_init > ");
 		return 1;

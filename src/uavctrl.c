@@ -96,7 +96,7 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 			break;
 		default:
 			printf("CTRL_run > unknown : %02x\n", in_buffer[0] & 0xFF);
-			continue;
+			is_stop_ctrl = 1;
 		}
 	}
 
