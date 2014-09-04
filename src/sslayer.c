@@ -36,7 +36,10 @@ int SSLAYER_init(SslHandle_t* handle, char* ip, int port) {
 	handle->ctx = SSL_CTX_new(meth);
 
 	handle->ssl_fd = socket(AF_INET, SOCK_STREAM, 0);
-	//BE_error(ssl_fd, "BE_init_ssl : socket");
+	if(handle->ssl_fd < 0){
+		perror("SSLAYER_init > socket");
+		return 1;
+	}
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
@@ -44,10 +47,16 @@ int SSLAYER_init(SslHandle_t* handle, char* ip, int port) {
 	sa.sin_port = htons(port);
 
 	err = connect(handle->ssl_fd, (struct sockaddr*) &sa, sizeof(sa));
-	//BE_error(err, "BE_init_ssl : connect");
+	if(err < 0){
+		perror("SSLAYER_init > connect");
+		return 1;
+	}
 
 	handle->ssl = SSL_new(handle->ctx);
-	SSL_set_fd(handle->ssl, handle->ssl_fd);
+	if(SSL_set_fd(handle->ssl, handle->ssl_fd) == 0){
+		perror("SSLAYER_init > SSL_set_fd");
+		return 1;
+	}
 
 	return 0;
 }

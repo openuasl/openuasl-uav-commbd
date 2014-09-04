@@ -17,12 +17,15 @@
 
 int UCS_init(SslHandle_t* ucs, char* ip) {
 
-	if(SSLAYER_init(ucs, ip, UCSTREAM_SERVER_PORT)){
+	if (SSLAYER_init(ucs, ip, UCSTREAM_SERVER_PORT)) {
 		perror("UCS_init > SSLAYER_init");
 		return 1;
 	}
 
-	SSL_connect(ucs->ssl);
+	if (SSL_connect(ucs->ssl) != 1) {
+		perror("CTRL_init > SSL_connect");
+		return 1;
+	}
 
 	return 0;
 }
@@ -92,7 +95,7 @@ int UCS_run(SslHandle_t* ucs) {
 	}
 
 	cvReleaseCapture(&capture);
-	is_stop_ucstream = 0;
+
 	return 0;
 }
 

@@ -13,19 +13,17 @@
 #include "auth.h"
 #include "svinfo.h"
 
-int CTRL_init(MWSerialHandle_t* mws, SslHandle_t* ctrl, char* ip) {
+int CTRL_init(SslHandle_t* ctrl, char* ip) {
 
-	if(MWSC_init(mws)){
-		perror("CTRL_init > MWSERIAL_init");
-		return 1;
-	}
-
-	if(SSLAYER_init(ctrl, ip, UAVCTRL_SERVER_PORT)){
+	if (SSLAYER_init(ctrl, ip, UAVCTRL_SERVER_PORT)) {
 		perror("CTRL_init > SSLAYER_init");
 		return 1;
 	}
 
-	SSL_connect(ctrl->ssl);
+	if (SSL_connect(ctrl->ssl) != 1) {
+		perror("CTRL_init > SSL_connect");
+		return 1;
+	}
 
 	return 0;
 }
@@ -33,7 +31,7 @@ int CTRL_init(MWSerialHandle_t* mws, SslHandle_t* ctrl, char* ip) {
 void* send_multiwii_status(void** p){
 	char in_buffer[UAVCTRL_BUF_SIZE];
 	char out_buffer[UAVCTRL_BUF_SIZE];
-	ssize_t read_count;
+	ssize_t read_count, wr;
 	MWSerialHandle_t* mws = (MWSerialHandle_t*)p[0];
 	SslHandle_t* ctrl = (SslHandle_t*)p[1];
 	int* is_stop_ctrl = (int*)p[2];
@@ -41,11 +39,19 @@ void* send_multiwii_status(void** p){
 	while(!(*is_stop_ctrl)){
 		read_count = MWSC_read(mws, in_buffer, UAVCTRL_BUF_SIZE);
 
-		if(read_count == -1)	return NULL;
+		if(read_count < 0){
+			*is_stop_ctrl = 1;
+			break;
+		}
 
 		memcpy(out_buffer+1, in_buffer, read_count);
 		out_buffer[0] = CTRL_MWREP_HEADER;
-		SSL_write(ctrl->ssl, out_buffer, read_count+1);
+		wr = SSL_write(ctrl->ssl, out_buffer, read_count+1);
+
+		if(wr <= 0){
+			*is_stop_ctrl = 1;
+			break;
+		}
 	}
 
 	return NULL;
@@ -76,6 +82,11 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 
 		read_count = SSL_read(ctrl->ssl, in_buffer, UAVCTRL_BUF_SIZE);
 
+		if(read_count < 0){
+			is_stop_ctrl = 1;
+			break;
+		}
+
 		SVINFO_send_svinfos(ctrl);
 
 		switch(in_buffer[0] & 0xFF){
@@ -100,10 +111,11 @@ int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl){
 		}
 	}
 
+	sleep(1);
+
 	return 0;
 }
 
-void CTRL_end(MWSerialHandle_t* mws, SslHandle_t* ctrl) {
-	MWSC_release(mws);
+void CTRL_end(SslHandle_t* ctrl) {
 	SSLAYER_release(ctrl);
 }

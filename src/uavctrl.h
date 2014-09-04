@@ -17,9 +17,9 @@
 #define CTRL_REP_STOP			0x77
 
 
-int CTRL_init(MWSerialHandle_t* mws, SslHandle_t* ctrl, char* ip);
+int CTRL_init(SslHandle_t* ctrl, char* ip);
 int CTRL_run(MWSerialHandle_t* mws, SslHandle_t* ctrl);
-void CTRL_end(MWSerialHandle_t* mws, SslHandle_t* ctrl);
+void CTRL_end(SslHandle_t* ctrl);
 
 
 
