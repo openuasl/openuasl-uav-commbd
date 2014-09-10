@@ -100,11 +100,6 @@ ssize_t MWSC_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 		return -1;
 	}
 
-	for(i=0; i<read_count; i++){
-		printf("%02X", pr[i] & 0xff);
-	}
-	printf("\n");
-
 	return read_count;
 }
 
