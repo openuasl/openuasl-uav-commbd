@@ -90,6 +90,8 @@ void get_buffer(MultiWiiPacket_t* p, char* dst, int* len){
 
 ssize_t MWSC_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 	int read_count;
+	int i;
+	char* pr = buffer;
 
 	read_count = read(handle->serial_fd, buffer, size);
 
@@ -97,6 +99,11 @@ ssize_t MWSC_read(MWSerialHandle_t* handle, void* buffer, size_t size){
 		perror("MWSERIAL_read > tcflush");
 		return -1;
 	}
+
+	for(i=0; i<read_count; i++){
+		printf("%02X", pr[i] & 0xff);
+	}
+	printf("\n");
 
 	return read_count;
 }
